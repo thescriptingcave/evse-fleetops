@@ -21,6 +21,7 @@ the rest. Last updated 2026-09-23.
 | Sync Gateway provisioning | `docker compose up --no-deps sg-db-init` (existing-DB path) | `config updated`, user status 200 |
 | Sync Gateway permissions | `scripts/sg-readgrant-probe.sh` as `tech_garcia` | reads 200, work order write 201, station write 403 |
 | Mobile app UI in mock mode | `npx expo run:ios` on iPhone 16 Pro simulator (iOS 26.4.1, Xcode 26.4.1); screenshot confirms header "MOCK", 4 stations with correct status chips, Work Orders and Sync tabs present | pass |
+| Couchbase Lite on iOS simulator | `EXPO_PUBLIC_USE_COUCHBASE_LITE=1 npx expo run:ios` on iPhone 16 Pro simulator; header shows "COUCHBASE-LITE", all 12 seeded stations pulled from Sync Gateway, Sync tab shows replicator: idle, progress: 100%, pending: 0, last sync timestamped | pass |
 
 ## Not verified
 
@@ -28,8 +29,8 @@ Ordered by risk, highest first.
 
 | # | Item | Why not | Risk |
 | --- | --- | --- | --- |
-| 1 | **Couchbase Lite on a real device or simulator** (`EXPO_PUBLIC_USE_COUCHBASE_LITE=1`): opening the DB, replicating with Sync Gateway, offline notes syncing back | Not yet attempted on this machine | High: `mobile/src/db/database.ts` compiles against the real SDK 1.1.0 types but has never run |
-| 2 | **Work Orders tab interaction in mock mode**: expanding a card, adding a note | Simulator launched; tapping not yet exercised from this session | Low: UI code is straightforward; mock addNote is covered by reading the code |
+| 1 | **Offline note sync**: add a note on device while offline, restore connectivity, confirm note appears in dashboard | Not yet exercised this session | Medium |
+| 2 | **Work Orders tab interaction**: expanding a card, adding a note while online | Simulator launched; tapping not yet exercised from this session | Low |
 | 3 | **Dashboard in a browser**: rendering, charts, clicking through pages, operator buttons, work order create/notes | Checked only at the HTTP level (curl), not in a browser | Medium |
 | 4 | **Fresh install from zero**: `make clean && make up` on an empty Docker volume (first-run `cb-init`, bucket creation, `sg-db-init` *create* path) | The existing cluster and volume were kept; only the re-run paths were exercised | Medium: the first-run code paths were not changed except in `sg-db-init.sh`'s user payload |
 | 5 | **`make demo`** as a single command | Its parts (compose, bootstrap, backend, simulator `--duration`) were run separately | Low |
@@ -39,9 +40,9 @@ Ordered by risk, highest first.
 
 ## Setting up this machine to verify the rest
 
-This Mac already has: Docker 29.7, `uv` 0.11, Node 24, Java 17 (Homebrew
-`openjdk@17`), Xcode **Command Line Tools** only. Couchbase Server and
-Sync Gateway containers are running.
+This Mac has: Docker 29.7, `uv` 0.11, Node 24, Java 17 (Homebrew `openjdk@17`),
+Xcode 26.4.1 (full app, license accepted), iOS 26.4.1 Simulator runtime,
+CocoaPods 1.17, Watchman. Couchbase Server and Sync Gateway containers are running.
 
 ### For item 3: dashboard in a browser (5 minutes)
 
