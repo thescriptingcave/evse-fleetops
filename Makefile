@@ -40,11 +40,15 @@ backend:
 sim:
 	cd simulator && uv run python -m sim --url $(EVSE_API_URL)
 
-dashboard:
+# Install dashboard deps on first use, and again whenever the lockfile changes.
+dashboard/node_modules/.package-lock.json: dashboard/package-lock.json
+	cd dashboard && npm ci
+
+dashboard: dashboard/node_modules/.package-lock.json
 	cd dashboard && npm run dev
 
-build-dashboard:
-	cd dashboard && npm install && npm run build
+build-dashboard: dashboard/node_modules/.package-lock.json
+	cd dashboard && npm run build
 
 # ---- Tests -------------------------------------------------------------------
 

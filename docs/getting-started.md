@@ -53,8 +53,9 @@ make sim          # telemetry for 12 stations every 5 s
 make dashboard    # http://localhost:5173
 ```
 
-The first `make backend` / `make sim` creates each project's `.venv`. Run
-`cd dashboard && npm install` once before the first `make dashboard`.
+The first run of each target sets up its dependencies: `make backend` / `make sim`
+create each project's `.venv`, and `make dashboard` runs `npm ci` (again
+whenever `dashboard/package-lock.json` changes).
 
 Start them **in this order**. The simulator looks up the station list from the
 backend when it starts. If the backend isn't up yet, it logs a warning,
