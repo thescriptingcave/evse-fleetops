@@ -1,0 +1,23 @@
+{
+  "name": "evse-technician",
+  "version": "0.1.0",
+  "main": "expo/AppEntry.js",
+  "scripts": {
+    "start": "expo start",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@couchbase/couchbase-lite-react-native": "^1.1.0",
+    "expo": "~54.0.0",
+    "expo-dev-client": "~6.0.21",
+    "react": "19.1.0",
+    "react-native": "0.81.5"
+  },
+  "devDependencies": {
+    "@types/react": "~19.1.0",
+    "typescript": "~5.9.0"
+  },
+  "private": true
+}

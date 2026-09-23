@@ -1,0 +1,114 @@
+name: evse-fleetops
+
+services:
+  couchbase-server:
+    image: couchbase/server:enterprise-8.0.3
+    container_name: evse-cb-server
+    hostname: cb-server
+    ports:
+      - "8091:8091"   # Web console + REST
+      - "8093:8093"   # N1QL (SQL++ query)
+      - "8094:8094"   # Full-text search
+      - "11210:11210" # Data (memcached/SDK)
+    networks:
+      - evse
+    volumes:
+      - cb-data:/opt/couchbase/var
+    ulimits:
+      nofile: 65536
+      nproc: 4096
+    mem_limit: 2g
+    healthcheck:
+      test: ["CMD", "curl", "-s", "-o", "/dev/null", "http://localhost:8091/pools"]
+      interval: 5s
+      timeout: 3s
+      retries: 40
+      start_period: 45s
+
+  # One-shot cluster initializer: services, memory quota, admin credentials.
+  # Idempotent, so `docker compose up` is safe to re-run.
+  cb-init:
+    image: curlimages/curl:8.12.1
+    container_name: evse-cb-init
+    depends_on:
+      couchbase-server:
+        condition: service_healthy
+    networks:
+      - evse
+    environment:
+      CB_HOST: couchbase-server
+      CB_ADMIN_USER: Administrator
+      CB_ADMIN_PASS: password
+    volumes:
+      - ./scripts/cb-init.sh:/cb-init.sh:ro
+    entrypoint: ["/bin/sh", "/cb-init.sh"]
+    restart: "no"
+
+  # One-shot: create the bucket, collections, indexes and seed data, so Sync
+  # Gateway finds a real bucket before it tries to attach the fleetops DB.
+  bootstrap:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: evse-bootstrap
+    depends_on:
+      cb-init:
+        condition: service_completed_successfully
+    networks:
+      - evse
+    environment:
+      EVSE_CB_HOST: couchbase-server
+      EVSE_CB_USERNAME: Administrator
+      EVSE_CB_PASSWORD: password
+    restart: "no"
+
+  # Couchbase App Services / Sync Gateway: bidirectional Couchbase Lite sync.
+  sync-gateway:
+    image: couchbase/sync-gateway:4.1.2-enterprise
+    container_name: evse-sync-gateway
+    depends_on:
+      cb-init:
+        condition: service_completed_successfully
+      bootstrap:
+        condition: service_completed_successfully
+    ports:
+      - "4984:4984" # public (mobile sync)
+      - "4985:4985" # admin API
+    networks:
+      - evse
+    volumes:
+      - ./sync-gateway/sg-config.json:/etc/sync_gateway/config.json:ro
+    command: ["/etc/sync_gateway/config.json"]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4984/"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 10s
+
+  # One-shot: create the Sync Gateway database config via admin API.
+  sg-db-init:
+    image: curlimages/curl:8.12.1
+    container_name: evse-sg-db-init
+    depends_on:
+      sync-gateway:
+        condition: service_healthy
+      bootstrap:
+        condition: service_completed_successfully
+    networks:
+      - evse
+    environment:
+      SG_HOST: sync-gateway
+    volumes:
+      - ./scripts/sg-db-init.sh:/sg-db-init.sh:ro
+      - ./sync-gateway/sg-db.json:/etc/sg-db.json:ro
+    entrypoint: ["/bin/sh", "/sg-db-init.sh"]
+    restart: "no"
+
+networks:
+  evse:
+    name: evse-net
+
+volumes:
+  cb-data:

@@ -1,0 +1,23 @@
+{
+  "num_index_replicas": 0,
+  "import_docs": true,
+  "enable_shared_bucket_access": true,
+  "scopes": {
+    "_default": {
+      "collections": {
+        "stations": {
+          "sync": "function(doc, oldDoc, meta) { requireAdmin(); channel('fleet'); }"
+        },
+        "workorders": {
+          "sync": "function(doc, oldDoc, meta) { requireAccess('fleet'); channel('fleet'); }"
+        },
+        "manuals": {
+          "sync": "function(doc, oldDoc, meta) { requireAdmin(); channel('fleet'); }"
+        },
+        "technicians": {
+          "sync": "function(doc, oldDoc, meta) { requireAdmin(); channel('fleet'); }"
+        }
+      }
+    }
+  }
+}

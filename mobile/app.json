@@ -1,0 +1,19 @@
+{
+  "expo": {
+    "name": "EVSE Technician",
+    "slug": "evse-technician",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "newArchEnabled": true,
+    "plugins": [
+      "expo-dev-client"
+    ],
+    "ios": {
+      "bundleIdentifier": "com.evse.technician"
+    },
+    "android": {
+      "package": "com.evse.technician"
+    }
+  }
+}
